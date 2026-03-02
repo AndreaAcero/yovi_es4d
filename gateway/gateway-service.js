@@ -108,6 +108,12 @@ app.post('/adduser', async (req, res) => {
   }
 });
 
+app.get('/api/auth/me', verifyToken, async (req, res) => {
+  res.json({
+    userId: req.body.userId
+  });
+});
+
 app.post('/logout', async (req, res) => {
   try {
     const authResponse = await axios.post(

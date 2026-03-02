@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { login } from '../services/userService';
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from '../i18n';
-
+import { AuthContext } from "../context/AuthContext";
 
 
 const LoginForm: React.FC = () => {
@@ -12,7 +12,7 @@ const LoginForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
-
+  const { checkAuth } = useContext(AuthContext);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +21,7 @@ const LoginForm: React.FC = () => {
 
     try {
       await login({ email, password });
-
+      await checkAuth(); // Actualiza el contexto con la nueva sesión
       navigate("/");
     } catch (err: any) {
       setError(err.message);

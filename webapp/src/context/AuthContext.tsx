@@ -1,68 +1,40 @@
-// src/context/AuthContext.tsx
-import React, { createContext, useEffect, useState } from 'react';
+import { createContext, useState, useEffect } from "react";
+import axios from "axios";
+import { API_URL } from "../config";
 
-interface User {
-  id: string;
-  email: string;
-  createdAt: string;
-}
+export const AuthContext = createContext<any>(null);
 
-interface AuthContextProps {
-  user: User | null;
-  loading: boolean;
-  logout: () => void;
-}
+export const AuthProvider = ({ children }: any) => {
 
-export const AuthContext = createContext<AuthContextProps>({
-  user: null,
-  loading: true,
-  logout: () => {}
-});
+  const [user, setUser] = useState(null);
 
-export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Función para comprobar sesión
-  const checkSession = async () => {
+  // comprobar si hay cookie válida
+  const checkAuth = async () => {
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/getUserProfile`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' }
+      const res = await axios.get(`${API_URL}/api/auth/me`, {
+        withCredentials: true
       });
-      if (!res.ok) {
-        setUser(null);
-        return;
-      }
-      const data = await res.json();
-      setUser(data);
-    } catch {
+
+      setUser(res.data);
+    } catch (err) {
       setUser(null);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    checkSession();
+    checkAuth();
   }, []);
 
-  // Función de logout
   const logout = async () => {
-    try {
-      await fetch(`${process.env.REACT_APP_API_URL}/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-      setUser(null);
-    } catch (err) {
-      console.error(err);
-    }
+    await axios.post(`${API_URL}/logout`, {}, {
+      withCredentials: true
+    });
+
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout }}>
+    <AuthContext.Provider value={{ user, setUser, logout, checkAuth }}>
       {children}
     </AuthContext.Provider>
   );
