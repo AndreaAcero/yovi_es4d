@@ -55,14 +55,21 @@ const GameBoard: React.FC = () => {
         const res = await fetch(`${API_URL}/api/game/start`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: 'include',
           body: JSON.stringify({ userId: "usuario_real", gameMode: "vsBot" }), // userId real
         });
+
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          throw new Error(errBody.error || `HTTP ${res.status} ${res.statusText}`);
+        }
+
         const data = await res.json();
 
         setGameState({
-          gameId: data.gameId,
-          hexData: data.board,
-          players: data.players.map((p: PlayerData, i: number) => ({
+          gameId: data.gameId || null,
+          hexData: data.board || [],
+          players: (data.players || []).map((p: PlayerData, i: number) => ({
             ...p,
             points: 0,
             role: i === 0 ? "j1" : "j2"  // asignamos roles
@@ -93,6 +100,7 @@ const GameBoard: React.FC = () => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: 'include',
           body: JSON.stringify({ userId: currentPlayer.id, role: currentPlayer.role, move: position }),
         }
       );
@@ -121,8 +129,15 @@ const GameBoard: React.FC = () => {
       const moveRes = await fetch(`${API_URL}/api/game/${gameState.gameId}/move`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({ userId: currentPlayer.id, role: currentPlayer.role, move: position, mode: "vsBot" }),
       });
+
+      if (!moveRes.ok) {
+        const errBody = await moveRes.json().catch(() => ({}));
+        throw new Error(errBody.error || `Move failed: ${moveRes.status}`);
+      }
+
       const moveData = await moveRes.json();
 
       // 4️⃣ Actualizar tablero con jugada del bot
