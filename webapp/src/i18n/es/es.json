@@ -83,6 +83,18 @@
     "yourTurn": "¡Es tu turno!",
     "botPlaying": "El bot está jugando...",
     "endGame": "¡Juego terminado! Ganador"
+  }, "editUser": {
+    "title": "Editar Perfil",
+    "email": "Correo electrónico",
+    "username": "Nombre de usuario",
+    "updateUsername": "Actualizar nombre de usuario",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Nueva contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "changePassword": "Cambiar contraseña",
+    "usernameUpdated": "Nombre de usuario actualizado correctamente",
+    "passwordChanged": "Contraseña cambiada correctamente",
+    "passwordMatch": "Las contraseñas no coinciden"
   }
 }
 

@@ -69,5 +69,17 @@
     "yourTurn": "It's your turn!",
     "botPlaying": "The bot is playing...",
     "endGame": "End of the game! Winner"
+  }, "editUser": {
+    "title": "Edit Profile",
+    "email": "Email",
+    "username": "Username",
+    "updateUsername": "Update Username",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "changePassword": "Change Password",
+    "usernameUpdated": "Username updated successfully",
+    "passwordChanged": "Password changed successfully",
+    "passwordMatch": "Passwords do not match"
   }
 }
