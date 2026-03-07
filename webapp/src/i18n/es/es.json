@@ -15,7 +15,8 @@
     "english": "Inglés",
     "team": "yovi_es4d",
     "selectLanguage": "Seleccionar idioma",
-    "initsession": "Iniciar sesión"
+    "initsession": "Iniciar sesión",
+    "historial": "Historial"
   },
   "footer": {
     "credits": "© 2026 yovi_es4d. Todos los derechos reservados."
@@ -95,6 +96,20 @@
     "usernameUpdated": "Nombre de usuario actualizado correctamente",
     "passwordChanged": "Contraseña cambiada correctamente",
     "passwordMatch": "Las contraseñas no coinciden"
+  }, "historial": {
+    "title": "Historial de partidas",
+    "noGames": "Aún no se han jugado partidas.",
+    "game": "Partida {{index}}: {{result}} contra {{opponent}} el {{date}} ",
+    "moves": "Movimientos: ",
+    "games": "Partidas",
+    "summary": "Resumen de partidas",
+    "totalGames": "Total de partidas: ",
+    "totalWins": "Total de victorias: ",
+    "winPct": "Porcentaje de victorias: ",
+    "date": "Fecha: ",
+    "opponent": "Oponente: ",
+    "result": "Resultado: ",
+    "mode": "Modo: "
   }
 }
 
