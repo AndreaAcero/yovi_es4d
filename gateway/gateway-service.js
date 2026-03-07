@@ -58,6 +58,29 @@ const verifyToken = (req, res, next) => {
   });
 };
 
+/**
+ * Endpoint for the history of games of a user.
+ * @route {GET} /api/game/history?userId={id}
+ * @param {string} userId - The ID of the user whose game history is being requested.
+ */
+app.get('/api/game/history', verifyToken, async (req, res) => {
+  try {
+    const userId = req.body.userId;
+
+    const gameRes = await axios.get(
+      `${gameServiceUrl}/api/game/history`,
+      { params: { userId } }
+    );
+
+    res.json(gameRes.data);
+
+  } catch (error) {
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.error || error.message;
+    res.status(status).json({ error: message });
+  }
+});
+
 
 /**
  * Endpoint to handle user login by forwarding the request to the authentication service.

@@ -1,0 +1,134 @@
+import React, { useEffect, useState, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext.tsx';
+import { getHistory } from '../services/userService.ts';
+import type { BackendGameRecord } from '../services/userService.ts';
+import { useTranslation } from '../i18n';
+import { useNavigate } from 'react-router-dom';
+
+const Historial: React.FC = () => {
+  const [history, setHistory] = useState<BackendGameRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const { t } = useTranslation();
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const userId = user?.id || user?.userId || user?._id;
+
+    console.log("Usuario desde contexto:", user);
+    console.log("userId usado:", user?.id || user?.userId);
+
+    if (!userId) {
+      navigate('/login');
+      return;
+    }
+
+    const load = async () => {
+      try {
+        setLoading(true);
+        const data = await getHistory(userId);
+        setHistory(data);
+      } catch (err) {
+        setError('Error al cargar historial');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [user, navigate]);
+
+  const totalGames = history.length;
+  const totalWins = history.filter(h => h.winner === 'j1').length;
+  const winPercentage = totalGames ? Math.round((totalWins / totalGames) * 100) : 0;
+
+  const getOpponentName = (game: BackendGameRecord) => {
+    const opponent = game.players.find(p => p.role === 'j2');
+    return opponent?.username || opponent?.name || 'Oponente desconocido';
+  };
+
+  const getWinnerName = (game: BackendGameRecord) => {
+    if (!game.winner) return 'Empate';
+    const winner = game.players.find(p => p.role === game.winner);
+    return winner?.username || winner?.name || (game.winner === 'j1' ? 'Jugador' : 'Oponente');
+  };
+
+  if (!user) return null;
+
+  return (
+    <div className="historial-page">
+      <header>
+        <h1>{t('historial.title') || 'Historial'}</h1>
+      </header>
+
+      {error && (
+        <div style={{color: '#d32f2f', padding: 12, marginBottom: 16, backgroundColor: '#ffebee', borderRadius: 4}}>
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{textAlign: 'center', padding: 20}}>Cargando historial...</div>
+      ) : (
+        <>
+          <section className="historial-summary" style={{border: '1px solid #ddd', padding: 12, marginBottom: 16}}>
+            <h2>{t('historial.summary') || 'Resumen general'}</h2>
+            <div style={{display: 'flex', gap: 16}}>
+              <div><strong>{t('historial.totalGames') || 'Partidas jugadas:'}</strong> {totalGames}</div>
+              <div><strong>{t('historial.totalWins') || 'Partidas ganadas:'}</strong> {totalWins}</div>
+              <div><strong>{t('historial.winPct') || 'Porcentaje victorias:'}</strong> {winPercentage}%</div>
+            </div>
+          </section>
+
+          <section className="historial-list">
+            <h2>{t('historial.games') || 'Partidas'}</h2>
+
+            {history.length === 0 ? (
+              <p>{t('historial.noGames') || 'No hay partidas registradas.'}</p>
+            ) : (
+              <ul style={{listStyle: 'none', padding: 0}}>
+                {history.map(game => (
+                  <li key={game._id || game.gameId} style={{border: '1px solid #eee', padding: 12, marginBottom: 12, borderRadius: 4}}>
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16}}>
+                      <div>
+                        <div><strong>{t('historial.date') || 'Fecha:'}</strong> {new Date(game.createdAt).toLocaleString('es-ES')}</div>
+                        <div><strong>{t('historial.opponent') || 'Contrincante:'}</strong> {getOpponentName(game)}</div>
+                      </div>
+
+                      <div>
+                        <div><strong>{t('historial.result') || 'Resultado:'}</strong> {getWinnerName(game)}</div>
+                        <div><strong>{t('historial.mode') || 'Modo:'}</strong> {game.gameMode}</div>
+                      </div>
+                    </div>
+
+                    <div style={{marginTop: 12}}>
+                      <details style={{cursor: 'pointer'}}>
+                        <summary style={{fontWeight: 'bold'}}>{t('historial.moves') || 'Detalles'}</summary>
+                        <div style={{marginTop: 8, paddingTop: 8, borderTop: '1px solid #eee'}}>
+                          <div><strong>Tablero:</strong> {game.boardSize || 11} casillas</div>
+                          <div><strong>Estado:</strong> {game.status}</div>
+
+                          {game.moves && game.moves.length > 0 ? (
+                            <div><strong>Movimientos:</strong> {game.moves.length} registrados</div>
+                          ) : (
+                            <div style={{color: '#666', fontStyle: 'italic'}}>Movimientos no disponibles</div>
+                          )}
+                        </div>
+                      </details>
+                    </div>
+
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default Historial;

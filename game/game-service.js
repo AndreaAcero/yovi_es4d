@@ -43,6 +43,33 @@ app.use(express.json());
 const games = new Map();
 
 /**
+ * Endpoint for the history of games of a user.
+ * @route {GET} /api/game/history?userId=...
+ */
+app.get('/api/game/history', async (req, res) => {
+  try {
+    const userId = req.query.userId;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'Falta userId en la query' });
+    }
+
+    const filtro = { userId };
+
+    const games = await GameModel.find(filtro)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json(games);
+
+  } catch (error) {
+    console.error('[HISTORIAL] Error obteniendo historial:', error);
+    res.status(500).json({ error: 'Error obteniendo historial' });
+  }
+});
+
+
+/**
  * Iniciar un nuevo juego
  */
 app.post('/api/game/start', async (req, res) => {

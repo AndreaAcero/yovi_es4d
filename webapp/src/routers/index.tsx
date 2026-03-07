@@ -7,6 +7,7 @@ import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import Dashboard from "../pages/Dashboard";
 import EditProfile from "../pages/EditProfilePage";
+import Historial from "../pages/Historial";
 
 
 const router = createBrowserRouter([
@@ -45,6 +46,10 @@ const router = createBrowserRouter([
   },{
     path: "/edit",
     element: <EditProfile />,
+  },
+  {
+    path: "/historial",
+    element: <Historial />,
   }
 
 ]);
