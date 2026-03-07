@@ -9,6 +9,7 @@ const port = 8002;
 
 // Middleware to parse JSON in request body
 app.use(express.json());
+
 // Connect to MongoDB
 const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/userdb';
 mongoose.connect(mongoUri);
@@ -24,7 +25,7 @@ function loginLimiter(req, res, next) {
   const ip = req.ip;
   const entry = failedAttempts.get(ip);
 
-  if (entry && entry.count+1 >= MAX_ATTEMPTS && (Date.now() - entry.lastAttempt) < WINDOW_MS) {
+  if (entry && entry.count + 1 >= MAX_ATTEMPTS && (Date.now() - entry.lastAttempt) < WINDOW_MS) {
     return res.status(429).json({ error: 'Too many login attempts, please try again later' });
   }
 
@@ -39,23 +40,7 @@ function validateRequiredFields(req, requiredFields) {
     }
   }
 }
-app.get('/profile', async (req, res) => {
-  try {
 
-    const { userId } = req.query;
-
-    const user = await User.findById(userId).select('-password');
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    res.json(user);
-
-  } catch (error) {
-    res.status(500).json({ error: 'Internal error' });
-  }
-});
 // Route for user login
 app.post('/login', loginLimiter, [
   check('email').isLength({ min: 3 }).trim().escape(),
@@ -64,34 +49,37 @@ app.post('/login', loginLimiter, [
   const ip = req.ip;
   try {
     // Check if required fields are present in the request body
-
     validateRequiredFields(req, ['email', 'password']);
 
+    // Validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ error: errors.array().toString() });
+      // Enviar solo los mensajes legibles
+      return res.status(400).json({ 
+        error: errors.array().map(e => e.msg).join(', ')
+      });
     }
-    let email = req.body.email.toString();
-    let password = req.body.password.toString();
+
+    const email = req.body.email.toString();
+    const password = req.body.password.toString();
+
     // Find the user by email in the database
     const user = await User.findOne({ email });
-
 
     // Check if the user exists and verify the password
     if (user && await bcrypt.compare(password, user.password)) {
       // Reset failed attempts on successful login
       failedAttempts.delete(ip);
-        
+
       // Generate a JWT token
       const token = jwt.sign({ userId: user._id }, privateKey, { expiresIn: '1h' });
 
       // Respond with the token and user information
-      // Enviar cookie HttpOnly
       res.cookie('token', token, {
         httpOnly: true,
-        secure: false, 
+        secure: false,
         sameSite: 'lax',
-        maxAge: 60 * 60 * 1000 
+        maxAge: 60 * 60 * 1000
       });
 
       res.json({ email: email, createdAt: user.createdAt, id: user._id });
@@ -101,6 +89,7 @@ app.post('/login', loginLimiter, [
       failedAttempts.set(ip, { count: entry.count + 1, lastAttempt: Date.now() });
       res.status(401).json({ error: 'Invalid credentials' });
     }
+
   } catch (error) {
     res.status(500).json({ error: 'Internal Server Error' });
   }
@@ -115,24 +104,12 @@ app.post('/logout', (req, res) => {
   res.json({ message: 'Logged out' });
 });
 
-app.post('/editUser', async (req, res) => {
-
-  const { userId, username } = req.body;
-
-  await User.findByIdAndUpdate(userId, {
-    username
-  });
-
-  res.json({ message: "Updated" });
-});
-
 // Start the server
-const server = app.listen(port, () => {
-});
+const server = app.listen(port, () => {});
 
 server.on('close', () => {
   // Close the Mongoose connection
   mongoose.connection.close();
 });
 
-module.exports = server
+module.exports =  server, validateRequiredFields ;
