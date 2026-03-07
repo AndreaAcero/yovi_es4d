@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { API_URL } from "../../config";
 import "./game.css";
 
-const BOT_MODE_META: Record<string, { label: string; description: string; tagClass: string; tag: string; emoji: string }> = {
-    random_bot:       { label: "Aleatorio",  description: "El bot no sigue ninguna estrategia, se comporta de manera aleatoria.", tagClass: "ms-tag ms-tag-facil",   tag: "Fácil",  emoji: "" },
-    intermediate_bot: { label: "Intermedio", description: "El bot evalúa el tablero y busca las mejores jugadas.",                tagClass: "ms-tag ms-tag-medio",   tag: "Medio",  emoji: "" },
+const BOT_MODE_META: Record<string, { label: string; description: string; tag: string; emoji: string }> = {
+    random_bot:       { label: "Aleatorio",  description: "El bot sigue ninguna estratégia, se comporta de manera aleatoria.", tag: "Fácil", emoji: "" },
+    intermediate_bot: { label: "Intermedio", description: "El bot evalúa el tablero y busca las mejores jugadas.",              tag: "Medio",  emoji: "" },
+    hard_bot:         { label: "Difícil",    description: "El bot juega al límite de sus capacidades. Solo para expertos.", tag: "Difícil", emoji: "" },
 };
 
 const BOARD_SIZES = [
+    { value: 8,  label: "Pequeño", description: "36 celdas · Partida rápida",  tag: "8×"  }, // ← añade esto
     { value: 11, label: "Normal",  description: "66 celdas · Partida ágil",    tag: "11×" },
     { value: 15, label: "Grande",  description: "120 celdas · Más estrategia", tag: "15×" },
     { value: 19, label: "Extra",   description: "190 celdas · Para expertos",  tag: "19×" },
@@ -82,9 +84,7 @@ const ModeSelector: React.FC = () => {
                                         <div className="ms-mode-info">
                                             <div className="ms-mode-name-row">
                                                 <span className="ms-mode-name">{meta?.label ?? mode}</span>
-                                                {meta?.tag && (
-                                                    <span className={meta.tagClass}>{meta.tag}</span>
-                                                )}
+
                                             </div>
                                             <p className="ms-mode-desc">{meta?.description}</p>
                                         </div>

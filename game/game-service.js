@@ -21,7 +21,7 @@ const games = new Map();
 const BOT_ROUTES = {
   random_bot:       '/v1/ybot/choose/random_bot',
   intermediate_bot: '/v1/ybot/choose/intermediate_bot',
-  // hard_bot:      '/v1/ybot/choose/hard_bot',   ← ejemplo futuro
+  hard_bot:      '/v1/ybot/choose/hard_bot',
 };
 
 const DEFAULT_BOT_MODE = 'random_bot';
@@ -60,7 +60,7 @@ app.post('/api/game/start', async (req, res) => {
     if (gameMode === 'vsBot') getBotRoute(botMode); // lanza si es inválido
 
     // Solo se permiten tamaños predefinidos; cualquier otro cae a 11
-    const ALLOWED_BOARD_SIZES = [11, 15, 19];
+    const ALLOWED_BOARD_SIZES = [8, 11, 15, 19];
     const boardSize = ALLOWED_BOARD_SIZES.includes(Number(rawBoardSize))
         ? Number(rawBoardSize)
         : 11;
