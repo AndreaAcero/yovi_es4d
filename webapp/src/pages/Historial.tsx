@@ -4,6 +4,8 @@ import { getHistory } from '../services/userService.ts';
 import type { BackendGameRecord } from '../services/userService.ts';
 import { useTranslation } from '../i18n';
 import { useNavigate } from 'react-router-dom';
+import './Historial.css';
+import Sidebar from '../components/Sidebar';
 
 const Historial: React.FC = () => {
   const [history, setHistory] = useState<BackendGameRecord[]>([]);
@@ -59,6 +61,8 @@ const Historial: React.FC = () => {
   if (!user) return null;
 
   return (
+    <>
+    <Sidebar />
     <div className="historial-page">
       <header>
         <h1>{t('historial.title') || 'Historial'}</h1>
@@ -127,7 +131,20 @@ const Historial: React.FC = () => {
           </section>
         </>
       )}
+      <div className="action-row">
+              <button className="play-button" onClick={() => navigate('/')}>
+                {t('startScreen.goback')}
+              </button>
+      </div>
+
     </div>
+    
+    
+    <footer className="start-footer">
+        <a href='https://github.com/Arquisoft/yovi_es4d/tree/master' id = 'github-link' ><p>{t('footer.credits')}</p></a>
+    </footer>
+
+    </>
   );
 };
 

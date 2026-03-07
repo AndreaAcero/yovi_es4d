@@ -3,13 +3,22 @@ import Typing from './Typing';
 import './StartScreen.css';
 import { useTranslation } from '../i18n';
 import { useNavigate } from 'react-router-dom'; 
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext.tsx';
 
 export default function StartScreen() {
   const { t } = useTranslation();
   const navigate = useNavigate();
- const handlePlayClick = () => {
-    navigate('/game');
+  const { user } = useContext(AuthContext);
+
+  const handlePlayClick = () => {
+    if (user && (user.id || user.userId || user._id)) {
+      navigate('/game');
+    } else {
+      navigate('/login');
+    }
   };
+
   return (
     <>
       <Sidebar />
@@ -22,8 +31,10 @@ export default function StartScreen() {
 
             <div className="action-row">
               <button className="play-button" onClick={handlePlayClick}>
-                {t('startScreen.play')}</button>
+                {t('startScreen.play')}
+              </button>
             </div>
+
             <div
               className="typing-holder"
               aria-hidden={false}
@@ -45,7 +56,9 @@ export default function StartScreen() {
       </div>
 
       <footer className="start-footer">
-        <a href='https://github.com/Arquisoft/yovi_es4d/tree/master' id = 'github-link' ><p>{t('footer.credits')}</p></a>
+        <a href='https://github.com/Arquisoft/yovi_es4d/tree/master' id='github-link'>
+          <p>{t('footer.credits')}</p>
+        </a>
       </footer>
     </>
   ); 

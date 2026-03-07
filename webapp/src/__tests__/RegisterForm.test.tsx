@@ -43,6 +43,46 @@ describe('RegisterForm', () => {
       expect(screen.getByTestId('repassword-input')).toBeInTheDocument()
       expect(screen.getByRole('button')).toBeInTheDocument()
     })
+
+    test('shows error message when register fails', async () => {
+      mockedRegister.mockRejectedValue({
+        response: { data: { error: 'Usuario ya existe' } },
+      });
+
+      renderForm();
+      const user = userEvent.setup();
+
+      await user.type(screen.getByLabelText(/Nombre de usuario:/i), 'pablo');
+      await user.type(screen.getByLabelText(/Correo electrónico:/i), 'pablo@example.com');
+      await user.type(screen.getByTestId('password-input'), 'Password1');
+      await user.type(screen.getByTestId('repassword-input'), 'Password1');
+
+      await user.click(screen.getByRole('button', { name: /registrarse/i }));
+
+      const errorMessage = await screen.findByText('Usuario ya existe');
+      expect(errorMessage).toBeInTheDocument();
+
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    test('shows error message when register fails with err.message', async () => {
+      mockedRegister.mockRejectedValue(new Error('Error de red'));
+
+      renderForm();
+      const user = userEvent.setup();
+
+      await user.type(screen.getByLabelText(/Nombre de usuario:/i), 'pablo');
+      await user.type(screen.getByLabelText(/Correo electrónico:/i), 'pablo@example.com');
+      await user.type(screen.getByTestId('password-input'), 'Password1');
+      await user.type(screen.getByTestId('repassword-input'), 'Password1');
+
+      await user.click(screen.getByRole('button', { name: /registrarse/i }));
+
+      const errorMessage = await screen.findByText('Error de red');
+      expect(errorMessage).toBeInTheDocument();
+
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
   
     test('allows user to type email and password', async () => {
       renderForm()

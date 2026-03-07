@@ -33,7 +33,7 @@ describe('GameOver', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/')
   })
 
-  test('renders winner and players correctly', () => {
+  test('renders winner as a player and players correctly', () => {
   const mockState = {
     winner: 'j1',
     players: [
@@ -66,4 +66,51 @@ describe('GameOver', () => {
   const button = screen.getByRole('button', { name: resources.es.gameOver.goHome })
   expect(button).toBeInTheDocument()
 })
+
+test('renders winner as a bot and players correctly', () => {
+  const mockState = {
+    winner: 'j2',
+    players: [
+      { name: 'Alice', points: 5 },
+      { name: 'Bot', points: 3 }
+    ],
+    hexData: []
+  }
+
+  vi.spyOn(reactRouter, 'useLocation').mockReturnValue({ state: mockState } as any)
+
+  render(
+    <I18nProvider defaultLang="es" resources={resources}>
+      <GameOver />
+    </I18nProvider>
+  )
+
+  const title = screen.getByRole('heading', { level: 1 })
+  expect(title.textContent).toContain('Bot')
+  expect(title.textContent).toContain('ha ganado')
+
+  const playerNames = screen.getAllByText(/Alice|Bot/).filter(
+        el => el.tagName.toLowerCase() === 'div' // para que no escoja también el título de ganador, que tiene el mismo nombre
+  )
+
+  expect(playerNames).toHaveLength(2)
+  expect(playerNames[0]).toHaveTextContent('Alice')
+  expect(playerNames[1]).toHaveTextContent('Bot')
+
+  const button = screen.getByRole('button', { name: resources.es.gameOver.goHome })
+  expect(button).toBeInTheDocument()
+})
+
+test('click rules button navigates to /profile', async () => {
+    const user = userEvent.setup()
+    render(
+      <I18nProvider defaultLang="es" resources={resources}>
+        <GameOver />
+      </I18nProvider>
+    )
+    const gameOverButton = screen.getByRole('button', { name: resources.es.gameOver.goHome })
+    await user.click(gameOverButton)
+    expect(mockNavigate).toHaveBeenCalledWith('/')
+  })
+
 })

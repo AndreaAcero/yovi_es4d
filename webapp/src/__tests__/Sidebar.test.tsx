@@ -56,6 +56,14 @@ describe('Sidebar', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/profile')
   })
 
+  test('click rules button navigates to /historial', async () => {
+    const user = userEvent.setup()
+    renderSidebar()
+    const historialButton = screen.getByRole('button', { name: resources.es.menu.historial })
+    await user.click(historialButton)
+    expect(mockNavigate).toHaveBeenCalledWith('/historial')
+  })
+
   test('login button navigates to /login when no user', async () => {
     const user = userEvent.setup()
     renderSidebar(null)
