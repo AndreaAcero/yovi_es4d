@@ -60,7 +60,7 @@ const ModeSelector: React.FC = () => {
             <div className="ms-body">
 
                 {/* ── Dificultad ── */}
-                <div className="fade-up" style={{ animationDelay: "100ms" }}>
+                <div className="fade-up" >
                     <p className="ms-section-label">Dificultad</p>
 
                     {loading ? (
@@ -69,7 +69,7 @@ const ModeSelector: React.FC = () => {
                         </div>
                     ) : (
                         <div className="ms-difficulty-list">
-                            {availableBotModes.map((mode, i) => {
+                            {availableBotModes.map((mode) => {
                                 const meta       = BOT_MODE_META[mode];
                                 const isSelected = selectedBotMode === mode;
                                 return (
@@ -77,7 +77,7 @@ const ModeSelector: React.FC = () => {
                                         key={mode}
                                         onClick={() => setSelectedBotMode(mode)}
                                         className={`ms-mode-card fade-up${isSelected ? " selected" : ""}`}
-                                        style={{ animationDelay: `${i * 80 + 150}ms` }}
+
                                     >
                                         <span className="ms-mode-emoji">{meta?.emoji ?? "🤖"}</span>
 
@@ -100,17 +100,17 @@ const ModeSelector: React.FC = () => {
                 </div>
 
                 {/* ── Tamaño del tablero ── */}
-                <div className="fade-up" style={{ animationDelay: "300ms" }}>
+                <div className="fade-up">
                     <p className="ms-section-label">Tamaño del tablero</p>
                     <div className="ms-size-grid">
-                        {BOARD_SIZES.map((size, i) => {
+                        {BOARD_SIZES.map((size) => {
                             const isSelected = selectedBoardSize === size.value;
                             return (
                                 <button
                                     key={size.value}
                                     onClick={() => setSelectedBoardSize(size.value)}
                                     className={`ms-size-card fade-up${isSelected ? " selected" : ""}`}
-                                    style={{ animationDelay: `${i * 80 + 350}ms` }}
+
                                 >
                                     <div className="ms-size-badge">{size.tag}</div>
                                     <div className="ms-size-label">{size.label}</div>
@@ -122,7 +122,7 @@ const ModeSelector: React.FC = () => {
                 </div>
 
                 {/* Botón Jugar */}
-                <div className="fade-up" style={{ animationDelay: "500ms" }}>
+                <div className="fade-up">
                     <button className="ms-play-btn" onClick={handleStart} disabled={loading}>
                         Jugar →
                     </button>
@@ -130,7 +130,7 @@ const ModeSelector: React.FC = () => {
             </div>
 
             {/* Decoración */}
-            <div className="ms-decoration fade-up" style={{ animationDelay: "600ms" }}>
+            <div className="ms-decoration fade-up">
                 <div className="ms-decoration-line" />
                 <span className="ms-decoration-text">YOVI</span>
                 <div className="ms-decoration-line" />
