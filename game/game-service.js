@@ -10,7 +10,6 @@ const mongoose = require('mongoose');
 
 const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/gameDB';
 
-// Conexión a MongoDB (se salta en tests con SKIP_MONGO=true)
 if (process.env.SKIP_MONGO !== 'true') {
   mongoose.connect(mongoUri)
     .then(() => console.log('✅ Conectado a MongoDB'))
@@ -90,10 +89,20 @@ app.get('/api/game/history', async (req, res) => {
  */
 app.post('/api/game/start', async (req, res) => {
   try {
-    const { userId, role = 'j1', gameMode = 'vsBot' } = req.body;
+    const {
+      userId,
+      role      = 'j1',
+      gameMode  = 'vsBot',
+      botMode   = 'random_bot',
+      boardSize: rawBoardSize = 11,
+    } = req.body;
+
+    const ALLOWED_BOARD_SIZES = [8, 11, 15, 19];
+    const boardSize = ALLOWED_BOARD_SIZES.includes(Number(rawBoardSize))
+      ? Number(rawBoardSize)
+      : 11;
 
     const gameId = `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const boardSize = 11;
 
     // Inicializa juego en Rust (solo logging por ahora)
     await axios.post(`${GAMEY_BOT_URL}/v1/game/start`, { board_size: boardSize }, { timeout: 5000 });
@@ -102,8 +111,9 @@ app.post('/api/game/start', async (req, res) => {
     const game = {
       gameId,
       userId,
-      role, // <-- nuevo
+      role,
       gameMode,
+      botMode,
       boardSize,
       board: initializeBoard(boardSize),
       players: [
@@ -146,12 +156,13 @@ app.post('/api/game/:gameId/validateMove', async (req, res) => {
 
   const [x, y, z] = move.replace(/[()]/g, '').split(',').map(v => Number(v.trim()));
 
-  // player 0 = j1 (humano), player 1 = j2 (bot)
-  // Comparamos userId con el id del jugador 1 guardado en el juego
-  const isPlayer1 = game.players[0].id === userId;
+  // Usamos el turno actual del juego para determinar el player
+  // (no el userId, que puede variar según el JWT)
+  const playerNum = game.currentPlayer === 'j1' ? 0 : 1;
+
   const rustResponse = await axios.post(`${GAMEY_BOT_URL}/v1/game/move`, {
     x, y, z,
-    player: isPlayer1 ? 0 : 1
+    player: playerNum
   });
 
   //  GUARDAR MOVIMIENTO EN MEMORIA
@@ -195,9 +206,10 @@ app.post('/api/game/:gameId/vsBot/move', async (req, res) => {
 
     await sleep(Math.floor(Math.random() * 1000) + 1000);
 
-    // Llamar a Rust para obtener movimiento del bot
+    // Llamar a Rust usando el botMode guardado en el juego
+    const botRoute = BOT_ROUTES[game.botMode] || BOT_ROUTES['random_bot'];
     const rustResponse = await axios.post(
-      `${GAMEY_BOT_URL}/v1/ybot/choose/random_bot`,
+      `${GAMEY_BOT_URL}${botRoute}`,
       convertToYEN(game)
     );
 
@@ -388,7 +400,7 @@ function sleep(ms) {
 app.get('/health', (req, res) => res.json({ status: 'Game Service is running' }));
 
 if (require.main === module) {
-  app.listen(port, '0.0.0.0', () => console.log(`Game Service listening on ${port}`));
+  app.listen(port, "0.0.0.0", () => console.log(`Game Service listening on ${port}`));
 }
 
 module.exports = app;
