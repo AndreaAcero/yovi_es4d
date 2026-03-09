@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -5,7 +7,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #1b2b4b;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -62,5 +64,43 @@ button:focus-visible {
   }
   button {
     background-color: #f9f9f9;
+  }
+}
+.profile-page {
+  max-width: 500px;
+  margin: 60px auto;
+}
+
+
+@layer base {
+  :root {
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  a {
+    font-weight: 500;
+    color: #646cff;
+    text-decoration: inherit;
+  }
+  a:hover {
+    color: #747bff;
+  }
+
+  /* Reset de button — Tailwind se encarga del resto */
+  button {
+    cursor: pointer;
+    font-family: inherit;
   }
 }
