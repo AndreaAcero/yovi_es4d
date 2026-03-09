@@ -105,7 +105,9 @@ app.post('/logout', (req, res) => {
 });
 
 // Start the server
-const server = app.listen(port, () => {});
+const server = app.listen(port, () => {
+  console.log(`User service running on ${port}`);
+});
 
 server.on('close', () => {
   // Close the Mongoose connection
