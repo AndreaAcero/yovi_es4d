@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 const promBundle = require('express-prom-bundle');
+const cookieParser = require("cookie-parser");
 
 // OpenAPI-Swagger Libraries
 const swaggerUi = require('swagger-ui-express');
@@ -15,12 +16,19 @@ const privateKey = process.env.TOKEN_SECRET_KEY || 'your-secret-key';
 const app = express();
 const port = 8000;
 
-const authServiceUrl = 'http://auth:8002' || 'http://localhost:8002';
-const userServiceUrl = 'http://users:8001' || 'http://localhost:8001';
-const gameServiceUrl = 'http://localhost:8003' || 'http://game:8003' ;
 
-app.use(cors());
+// URLs for microservices NECESARIO CAMBIAR
+const authServiceUrl =  process.env.authServiceUrl || 'http://localhost:8002';
+const userServiceUrl =  process.env.userServiceUrl || 'http://localhost:8001';
+const gameServiceUrl = process.env.gameServiceUrl || 'http://localhost:8003';
+
+
+app.use(cors({
+  origin: 'http://localhost:5173', // tu frontend
+  credentials: true               // permite enviar cookies o headers de auth
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 const metricsMiddleware = promBundle({ includeMethod: true });
 app.use(metricsMiddleware);
@@ -30,28 +38,71 @@ app.use(metricsMiddleware);
  * Si no hay token, asigna un usuario guest.
  */
 const verifyToken = (req, res, next) => {
-  if (!req.headers['authorization']) {
-    req.body.userId = 'guest' + Date.now();
-    next();
-  } else {
-    const token = req.headers['authorization']?.split(' ')[1];
-    if (!token) return res.status(401).json({ message: "Token wasn't provided properly" });
-    jwt.verify(token, privateKey, (err, decoded) => {
-      if (err) return res.status(401).json({ message: 'Unauthorized' });
-      req.body.userId = decoded.userId;
-      next();
-    });
+  const token = req.cookies.token; 
+
+  if (!token) {
+    return res.status(401).json({ message: "No autenticado" });
   }
+
+  jwt.verify(token, privateKey, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ message: "Token inválido" });
+    }
+
+    req.body.userId = decoded.userId;
+    next();
+  });
 };
+
 
 // ================= AUTH & USERS =================
 
+/**
+ * Endpoint for the history of games of a user.
+ * @route {GET} /api/game/history?userId={id}
+ * @param {string} userId - The ID of the user whose game history is being requested.
+ */
+app.get('/api/game/history', verifyToken, async (req, res) => {
+  try {
+    const userId = req.body.userId;
+
+    const gameRes = await axios.get(
+      `${gameServiceUrl}/api/game/history`,
+      { params: { userId } }
+    );
+
+    res.json(gameRes.data);
+
+  } catch (error) {
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.error || error.message;
+    res.status(status).json({ error: message });
+  }
+});
+
+
+
 app.post('/login', async (req, res) => {
   try {
-    const authResponse = await axios.post(authServiceUrl + '/login', req.body);
+    const authResponse = await axios.post(
+      authServiceUrl + '/login',
+      req.body,
+      { withCredentials: true }
+    );
+
+    // reenviar cookie al frontend
+    const setCookie = authResponse.headers['set-cookie'];
+    if (setCookie) {
+      res.setHeader('Set-Cookie', setCookie);
+    }
+
     res.json(authResponse.data);
+
   } catch (error) {
-    res.status(error.response.status).json({ error: error.response.data.error });
+    res.status(error.response?.status || 500).json({
+      error: error.response?.data?.error || 'Login error'
+    });
+    console.log(error);
   }
 });
 
@@ -60,18 +111,25 @@ app.post('/adduser', async (req, res) => {
     const userResponse = await axios.post(userServiceUrl + '/adduser', req.body);
     res.json(userResponse.data);
   } catch (error) {
-    res.status(error.response.status).json({ error: error.response.data.error });
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.error || error.message || 'Internal server error';
+    res.status(status).json({ error: message });
+    console.log(error);
   }
 });
-
-app.post('/api/user/editUser', verifyToken, async (req, res) => {
+app.post("/api/user/getUserProfile", async (req, res) => {
   try {
-    const editResponse = await axios.post(userServiceUrl + '/editUser', req.body);
-    res.json(editResponse.data);
-  } catch (error) {
-    res.status(error.response.status).json({ error: error.response.data.error });
-  }
-});
+    const token = req.cookies.token;
+    if (!token) return res.status(401).json({ error: "Not authenticated" });
+
+    const payload = jwt.verify(token, privateKey); 
+    const userId = payload.userId;
+
+    // PASAR userId al microservicio
+    const response = await axios.post(`${userServiceUrl}/profile`, { userId }); 
+
+    res.json(response.data);
+
 
 // ================= GAME =================
 
@@ -89,6 +147,88 @@ app.get('/api/game/bot-modes', async (req, res) => {
     res.status(error.response?.status || 500).json({ error: 'Error obteniendo modos de bot' });
   }
 });
+
+
+
+app.get('/api/auth/me', verifyToken, async (req, res) => {
+  res.json({
+    userId: req.body.userId
+  });
+
+
+});
+
+app.post('/logout', async (req, res) => {
+  try {
+    const authResponse = await axios.post(
+      authServiceUrl + '/logout',
+      {},
+      { withCredentials: true }
+    );
+
+    // reenviar cookie al frontend
+    const setCookie = authResponse.headers['set-cookie'];
+    if (setCookie) {
+      res.setHeader('Set-Cookie', setCookie);
+    }
+
+    res.json(authResponse.data);
+
+  } catch (error) {
+    res.status(error.response?.status || 500).json({
+      error: error.response?.data?.error || 'Logout error'
+    });
+  }
+});
+/**
+ * Endpoint to edit an existing user's details.
+ * Requires JWT token verification for user authentication.
+ *
+ * @route {POST} /api/user/editUser
+ * @param {Object} req.body - The data required to update the user's details.
+ * @param {Object} req.body.userId - The authenticated user's information.
+ * @returns {Object} The response from the user service.
+ */
+app.post('/api/user/editUsername', verifyToken, async (req, res) => {
+    const { username } = req.body;
+    const userId = req.body.userId;
+
+    if (!userId || !username) {
+        return res.status(400).json({ error: 'Missing userId or username' });
+    }
+
+    try {
+        const response = await axios.post(`${userServiceUrl}/editUser`, { userId, username });
+        res.json(response.data);
+    } catch (error) {
+        res.status(error.response?.status || 500).json({
+            error: error.response?.data?.error || 'Internal error'
+        });
+    }
+});
+
+app.post('/api/user/changePassword', verifyToken, async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.body.userId;
+    if (!userId || !currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+        const response = await axios.post(`${userServiceUrl}/changePassword`, {
+            userId,
+            currentPassword,
+            newPassword
+        });
+        res.json(response.data);
+    } catch (error) {
+        res.status(error.response?.status || 500).json({
+            error: error.response?.data?.error || 'Internal error'
+        });
+    }
+});
+
+
 
 /**
  * Iniciar juego.
@@ -140,7 +280,9 @@ app.post('/api/game/:gameId/validateMove', async (req, res) => {
 app.post('/api/game/:gameId/move', async (req, res) => {
   try {
     const { gameId } = req.params;
+
     const { move, userId, mode } = req.body;
+
 
     if (!move || !userId) {
       return res.status(400).json({ error: 'Move and userId are required' });
@@ -155,7 +297,9 @@ app.post('/api/game/:gameId/move', async (req, res) => {
       return res.status(400).json({ error: 'Invalid game mode' });
     }
 
+
     const moveResponse = await axios.post(backendEndpoint, { userId, move, mode });
+
     res.json(moveResponse.data);
   } catch (error) {
     console.error(error.response?.data || error.message || error);

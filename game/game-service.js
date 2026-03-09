@@ -5,7 +5,41 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 8003;
 
-const GAMEY_BOT_URL = 'http://localhost:3001'||'http://gamey:3001' ;
+
+const GAMEY_BOT_URL = 'http://localhost:3001'||'http://gamey:3001';
+const mongoose = require('mongoose');
+
+const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/gameDB';
+
+// Conexión a MongoDB
+mongoose.connect(mongoUri)
+  .then(() => console.log('✅ Conectado a MongoDB'))
+  .catch(err => console.error('❌ Error conectando a MongoDB:', err));
+
+// Esquema de Game
+const gameSchema = new mongoose.Schema({
+  gameId: { type: String, required: true, unique: true },
+  userId: String,
+  gameMode: String,
+  boardSize: Number,
+  board: [{ position: String, player: String }],
+  players: [{
+    id: String,
+    role: String,
+    name: String,
+    color: String,
+    points: Number
+  }],
+  moves: [mongoose.Schema.Types.Mixed],
+  status: String,
+  winner: String,
+  createdAt: Date,
+  finishedAt: Date
+});
+
+const GameModel = mongoose.model('Game', gameSchema);
+
+
 
 app.use(cors());
 app.use(express.json());
@@ -39,9 +73,39 @@ function getBotRoute(botMode) {
   return route;
 }
 
+
+
+
+ * Endpoint for the history of games of a user.
+ * @route {GET} /api/game/history?userId=...
+ */
+app.get('/api/game/history', async (req, res) => {
+  try {
+    const userId = req.query.userId;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'Falta userId en la query' });
+    }
+
+    const filtro = { userId };
+
+    const games = await GameModel.find(filtro)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json(games);
+
+  } catch (error) {
+    console.error('[HISTORIAL] Error obteniendo historial:', error);
+    res.status(500).json({ error: 'Error obteniendo historial' });
+  }
+});
+
+
 // ================= ENDPOINTS =================
 
 /**
+
  * Iniciar un nuevo juego.
  * Body: { userId, gameMode?, botMode? }
  *   gameMode : 'vsBot' | 'multiplayer'  (default: 'vsBot')
@@ -65,6 +129,8 @@ app.post('/api/game/start', async (req, res) => {
         ? Number(rawBoardSize)
         : 11;
 
+
+
     const gameId = `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     await axios.post(`${GAMEY_BOT_URL}/v1/game/start`, { board_size: boardSize }, { timeout: 5000 });
@@ -72,6 +138,7 @@ app.post('/api/game/start', async (req, res) => {
     const game = {
       gameId,
       userId,
+      role, // <-- nuevo
       gameMode,
       botMode,           // ← guardamos el modo elegido
       boardSize,
@@ -79,6 +146,7 @@ app.post('/api/game/start', async (req, res) => {
       players: [
         { id: userId,                                       name: 'Player 1', color: 'j1', points: 0 },
         { id: gameMode === 'vsBot' ? 'bot' : 'player2',    name: gameMode === 'vsBot' ? 'Bot' : 'Player 2', color: 'j2', points: 0 },
+
       ],
       currentPlayer: 'j1',
       moves: [],
@@ -119,24 +187,39 @@ app.get('/api/game/bot-modes', (req, res) => {
  */
 app.post('/api/game/:gameId/validateMove', async (req, res) => {
   const { gameId } = req.params;
-  const { move, userId } = req.body;
+  const { move, userId, role } = req.body;
 
   const game = games.get(gameId);
   if (!game) return res.status(404).json({ error: 'Game not found' });
 
   const [x, y, z] = move.replace(/[()]/g, '').split(',').map(v => Number(v.trim()));
+
   const rustResponse = await axios.post(`${GAMEY_BOT_URL}/v1/game/move`, {
     x, y, z,
+
     player: userId === 'j1' ? 0 : 1,
   });
 
   game.currentPlayer = 'j2';
   applyBoardUpdate(game, rustResponse.data.board);
 
+ game.moves.push({
+    position: move,
+    player: role,
+    userId: userId
+  });
+  
+  if (rustResponse.data.status === 'finished') {
+    game.winner = rustResponse.data.winner === 0 ? 'j1' : 'j2';
+    await finishGameAndSave(game);
+  }
+
   res.json({
     valid:  true,
     winner: rustResponse.data.status === 'finished' ? (rustResponse.data.winner === 0 ? 'j1' : 'j2') : null,
     status: rustResponse.data.status,
+
+   
   });
 });
 
@@ -147,6 +230,7 @@ app.post('/api/game/:gameId/validateMove', async (req, res) => {
 app.post('/api/game/:gameId/vsBot/move', async (req, res) => {
   try {
     const { gameId } = req.params;
+    const { role } = req.body; // <-- agregado role
     const game = games.get(gameId);
     if (!game) return res.status(404).json({ error: 'Game not found' });
 
@@ -154,7 +238,6 @@ app.post('/api/game/:gameId/vsBot/move', async (req, res) => {
       return res.status(400).json({ message: 'No es turno del bot', valid: false });
     }
 
-    // Bot "piensa"
     await sleep(Math.floor(Math.random() * 1000) + 1000);
 
     // Ruta dinámica según el botMode guardado en el juego
@@ -165,12 +248,16 @@ app.post('/api/game/:gameId/vsBot/move', async (req, res) => {
       return res.status(500).json({ error: 'Rust no devolvió tablero' });
     }
 
+
     applyBoardUpdate(game, rustResponse.data.board);
+
     game.currentPlayer = rustResponse.data.turn === 0 ? 'j1' : 'j2';
 
     if (rustResponse.data.status === 'finished') {
       game.status = 'finished';
       game.winner = rustResponse.data.winner === 0 ? 'j1' : 'j2';
+        // Guardar automáticamente
+      await finishGameAndSave(game);
     }
 
     res.json({
@@ -215,9 +302,35 @@ app.get('/api/game/:gameId', (req, res) => {
   });
 });
 
-/**
- * Finalizar y guardar juego.
- */
+async function finishGameAndSave(game) {
+  game.status = 'finished';
+  game.finishedAt = new Date();
+
+  try {
+    await GameModel.findOneAndUpdate(
+      { gameId: game.gameId },
+      {
+        gameId: game.gameId,
+        userId: game.userId,
+        gameMode: game.gameMode,
+        boardSize: game.boardSize,
+        players: game.players,
+        moves: game.moves,
+        status: game.status,   
+        winner: game.winner,
+        createdAt: game.createdAt,
+        finishedAt: game.finishedAt
+      },
+      { upsert: true, new: true }
+    );
+
+    console.log(`✅ Juego ${game.gameId} guardado en DB`);
+  } catch (err) {
+    console.error('❌ Error guardando juego:', err);
+  }
+}
+
+
 app.post('/api/game/endAndSaveGame', async (req, res) => {
   const { gameId } = req.body;
   const game = games.get(gameId);
@@ -236,6 +349,7 @@ app.post('/api/game/endAndSaveGame', async (req, res) => {
     },
   });
 });
+
 
 // ================= FUNCIONES AUXILIARES =================
 

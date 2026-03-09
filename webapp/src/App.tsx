@@ -1,5 +1,4 @@
 import './components/StartScreen.css';
-import './App.css';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import StartScreen from './components/StartScreen';
 import Rules from './components/Rules';
@@ -10,24 +9,10 @@ import RegisterPage from './pages/RegisterPage';
 import Dashboard from "./pages/Dashboard";
 import ModeSelector from "./components/game/ModeSelector";
 
+import { RouterProvider } from 'react-router-dom';
+import router from './routers/index';
 function App() {
-  return (
-    <Router>
-      <div className="App">
-        <Routes>
-          <Route path="/" element={<StartScreen />} />
-          <Route path="/rules" element={<Rules />} />
-          <Route path="/game" element={<ScreenGame />} />
-          <Route path="/gameover" element={<GameOver />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/select" element={<ModeSelector />} />
-        </Routes>
-      </div>
-    </Router>
-
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;
