@@ -285,7 +285,7 @@ app.post('/api/game/:gameId/validateMove', verifyToken, async (req, res) => {
  * Body: { move, userId, mode }
  *   mode: 'vsBot' | 'multiplayer'
  */
-app.post('/api/game/:gameId/move', async (req, res) => {
+app.post('/api/game/:gameId/move', verifyToken,  async (req, res) => {
   try {
     const { gameId } = req.params;
 

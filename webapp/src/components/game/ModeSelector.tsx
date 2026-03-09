@@ -26,7 +26,9 @@ const ModeSelector: React.FC = () => {
     useEffect(() => {
         const fetchBotModes = async () => {
             try {
-                const res  = await fetch(`${API_URL}/api/game/bot-modes`);
+                const res  = await fetch(`${API_URL}/api/game/bot-modes`,  {
+                credentials: "include"
+                });
                 const data = await res.json();
                 const modes: string[] = data.botModes ?? [];
                 setAvailableBotModes(modes);

@@ -149,7 +149,7 @@ app.post('/api/game/:gameId/validateMove', async (req, res) => {
     player: userId === 'j1' ? 0 : 1
   });
 
-  // ✅ GUARDAR MOVIMIENTO EN MEMORIA
+  //  GUARDAR MOVIMIENTO EN MEMORIA
   game.moves.push({
     position: move,
     userId: userId
@@ -180,7 +180,7 @@ app.post('/api/game/:gameId/validateMove', async (req, res) => {
 app.post('/api/game/:gameId/vsBot/move', async (req, res) => {
   try {
     const { gameId } = req.params;
-    const { role } = req.body; // <-- agregado role
+    const { role } = req.body; 
     const game = games.get(gameId);
     if (!game) return res.status(404).json({ error: 'Game not found' });
 

@@ -104,6 +104,7 @@ const GameBoard: React.FC = () => {
           `${API_URL}/api/game/${gameState.gameId}/validateMove`,
           {
             method: "POST",
+            credentials: 'include',
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId: "j1", move: position }),
           }
@@ -126,6 +127,7 @@ const GameBoard: React.FC = () => {
 
       const moveRes = await fetch(`${API_URL}/api/game/${gameState.gameId}/move`, {
         method: "POST",
+        credentials: 'include',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: "j1", move: position, mode: gameMode }),
       });
