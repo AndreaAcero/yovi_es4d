@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { post } from "../services/api"; // ajusta la ruta
+import { post } from "../services/api";
 
 describe("post", () => {
   beforeEach(() => {
@@ -8,9 +8,9 @@ describe("post", () => {
 
   test("returns data on successful POST", async () => {
     const mockResponse = { success: true, data: { id: 1 } };
-    globalThis.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({ 
       ok: true,
-      json: async () => mockResponse
+      json: async () => mockResponse 
     } as any);
 
     const data = { name: "Alice" };

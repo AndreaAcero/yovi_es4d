@@ -3,170 +3,127 @@ import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 import { describe, test, expect, vi } from 'vitest'
 import GameOver from '../components/GameOver'
-import { I18nProvider } from '../i18n'
-import resources from '../i18n/resources'
 import * as reactRouter from 'react-router-dom'
 
-// Mock useNavigate
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => ({
   ...await vi.importActual<typeof reactRouter>('react-router-dom'),
   useNavigate: () => mockNavigate,
-  useLocation: () => ({ state: null })
+  useLocation: () => ({ state: null }),
 }))
 
 vi.mock('../components/game/Triangle', () => ({
-  default: ({ onHexClick }: any) => (
-    <button data-testid="triangle" onClick={onHexClick}>
-      Triangle
-    </button>
-  )
+  default: ({ onHexClick }: { onHexClick: () => void }) => (
+    <button data-testid="triangle" onClick={onHexClick}>Triangle</button>
+  ),
 }))
+
+const baseState = {
+  winner: 'j1',
+  players: [
+    { id: 'p1', name: 'Alice', points: 5 },
+    { id: 'p2', name: 'Bot',   points: 3 },
+  ],
+  hexData: [],
+}
 
 describe('GameOver', () => {
 
-  test('renders noGame message when location.state is undefined', async () => {
+  test('muestra mensaje de no hay partida cuando no hay state', () => {
     render(
-      <I18nProvider defaultLang="es" resources={resources}>
+      <reactRouter.MemoryRouter>
         <GameOver />
-      </I18nProvider>
+      </reactRouter.MemoryRouter>
     )
+    expect(screen.getByText(/no hay partida/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /volver al inicio/i })).toBeInTheDocument()
+  })
 
-    expect(screen.getByText(resources.es.gameOver.noGame)).toBeInTheDocument()
-    const button = screen.getByRole('button', { name: resources.es.gameOver.goHome })
-    expect(button).toBeInTheDocument()
-
+  test('botón volver al inicio navega a / cuando no hay state', async () => {
     const user = userEvent.setup()
-    await user.click(button)
+    render(
+      <reactRouter.MemoryRouter>
+        <GameOver />
+      </reactRouter.MemoryRouter>
+    )
+    await user.click(screen.getByRole('button', { name: /volver al inicio/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/')
   })
 
-  test('renders winner as a player and players correctly', () => {
-  const mockState = {
-    winner: 'j1',
-    players: [
-      { name: 'Alice', points: 5 },
-      { name: 'Bot', points: 3 }
-    ],
-    hexData: []
-  }
-
-  vi.spyOn(reactRouter, 'useLocation').mockReturnValue({ state: mockState } as any)
-
-  render(
-    <I18nProvider defaultLang="es" resources={resources}>
-      <GameOver />
-    </I18nProvider>
-  )
-
-  const title = screen.getByRole('heading', { level: 1 })
-  expect(title.textContent).toContain('Alice')
-  expect(title.textContent).toContain('ha ganado')
-
-  const playerNames = screen.getAllByText(/Alice|Bot/).filter(
-        el => el.tagName.toLowerCase() === 'div' // para que no escoja también el título de ganador, que tiene el mismo nombre
-  )
-
-  expect(playerNames).toHaveLength(2)
-  expect(playerNames[0]).toHaveTextContent('Alice')
-  expect(playerNames[1]).toHaveTextContent('Bot')
-
-  const button = screen.getByRole('button', { name: resources.es.gameOver.goHome })
-  expect(button).toBeInTheDocument()
-})
-
-test('renders winner as a bot and players correctly', () => {
-  const mockState = {
-    winner: 'j2',
-    players: [
-      { name: 'Alice', points: 5 },
-      { name: 'Bot', points: 3 }
-    ],
-    hexData: []
-  }
-
-  vi.spyOn(reactRouter, 'useLocation').mockReturnValue({ state: mockState } as any)
-
-  render(
-    <I18nProvider defaultLang="es" resources={resources}>
-      <GameOver />
-    </I18nProvider>
-  )
-
-  const title = screen.getByRole('heading', { level: 1 })
-  expect(title.textContent).toContain('Bot')
-  expect(title.textContent).toContain('ha ganado')
-
-  const playerNames = screen.getAllByText(/Alice|Bot/).filter(
-        el => el.tagName.toLowerCase() === 'div' // para que no escoja también el título de ganador, que tiene el mismo nombre
-  )
-
-  expect(playerNames).toHaveLength(2)
-  expect(playerNames[0]).toHaveTextContent('Alice')
-  expect(playerNames[1]).toHaveTextContent('Bot')
-
-  const button = screen.getByRole('button', { name: resources.es.gameOver.goHome })
-  expect(button).toBeInTheDocument()
-})
-
-test('click rules button navigates to /profile', async () => {
-    const user = userEvent.setup()
-    render(
-      <I18nProvider defaultLang="es" resources={resources}>
-        <GameOver />
-      </I18nProvider>
-    )
-    const gameOverButton = screen.getByRole('button', { name: resources.es.gameOver.goHome })
-    await user.click(gameOverButton)
-    expect(mockNavigate).toHaveBeenCalledWith('/')
-  })
-
-
-  test('winner is undefined or invalid', () => {
-    const mockState = {
-      winner: 'unknown',
-      players: [
-        { name: 'Alice', points: 5 },
-        { name: 'Bot', points: 3 }
-      ],
-      hexData: []
-    }
-
-    vi.spyOn(reactRouter, 'useLocation').mockReturnValue({ state: mockState } as any)
-
-    render(
-      <I18nProvider defaultLang="es" resources={resources}>
-        <GameOver />
-      </I18nProvider>
-    )
+  test('muestra el nombre del ganador j1 en el título', () => {
+    vi.spyOn(reactRouter, 'useLocation').mockReturnValue({ state: baseState } as any)
+    render(<reactRouter.MemoryRouter><GameOver /></reactRouter.MemoryRouter>)
 
     const title = screen.getByRole('heading', { level: 1 })
-    expect(title.textContent).toContain('Bot')
-    expect(title.textContent).toContain('ha ganado')
+    expect(title).toHaveTextContent('Alice')
+    expect(title).toHaveTextContent('ha ganado')
   })
 
-  test('triangle click triggers onHexClick', async () => {
-  const user = userEvent.setup()
+  test('muestra el nombre del ganador j2 en el título', () => {
+    vi.spyOn(reactRouter, 'useLocation').mockReturnValue({
+      state: { ...baseState, winner: 'j2' },
+    } as any)
+    render(<reactRouter.MemoryRouter><GameOver /></reactRouter.MemoryRouter>)
 
-  const mockState = {
-    winner: 'j1',
-    players: [
-      { name: 'Alice', points: 5 },
-      { name: 'Bot', points: 3 }
-    ],
-    hexData: []
-  }
+    const title = screen.getByRole('heading', { level: 1 })
+    expect(title).toHaveTextContent('Bot')
+    expect(title).toHaveTextContent('ha ganado')
+  })
 
-  vi.spyOn(reactRouter, 'useLocation').mockReturnValue({ state: mockState } as any)
+  test('muestra las tarjetas de ambos jugadores', () => {
+    vi.spyOn(reactRouter, 'useLocation').mockReturnValue({ state: baseState } as any)
+    render(<reactRouter.MemoryRouter><GameOver /></reactRouter.MemoryRouter>)
 
-  render(
-    <I18nProvider defaultLang="es" resources={resources}>
-      <GameOver />
-    </I18nProvider>
-  )
+    const names = screen.getAllByText(/Alice|Bot/).filter(
+      el => el.classList.contains('go-player-name')
+    )
+    expect(names).toHaveLength(2)
+    expect(names[0]).toHaveTextContent('Alice')
+    expect(names[1]).toHaveTextContent('Bot')
+  })
 
-  const triangle = screen.getByTestId("triangle")
-  await user.click(triangle)
-})
-  
+  test('muestra los puntos de los jugadores con padding a 4 dígitos', () => {
+    vi.spyOn(reactRouter, 'useLocation').mockReturnValue({ state: baseState } as any)
+    render(<reactRouter.MemoryRouter><GameOver /></reactRouter.MemoryRouter>)
+
+    expect(screen.getByText('0005')).toBeInTheDocument()
+    expect(screen.getByText('0003')).toBeInTheDocument()
+  })
+
+  test('muestra el trofeo 🏆', () => {
+    vi.spyOn(reactRouter, 'useLocation').mockReturnValue({ state: baseState } as any)
+    render(<reactRouter.MemoryRouter><GameOver /></reactRouter.MemoryRouter>)
+    expect(screen.getByText('🏆')).toBeInTheDocument()
+  })
+
+  test('botón Nueva partida navega a /select', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(reactRouter, 'useLocation').mockReturnValue({ state: baseState } as any)
+    render(<reactRouter.MemoryRouter><GameOver /></reactRouter.MemoryRouter>)
+
+    await user.click(screen.getByRole('button', { name: /nueva partida/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/select')
+  })
+
+  test('botón Inicio navega a /', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(reactRouter, 'useLocation').mockReturnValue({ state: baseState } as any)
+    render(<reactRouter.MemoryRouter><GameOver /></reactRouter.MemoryRouter>)
+
+    await user.click(screen.getByRole('button', { name: /^inicio$/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/')
+  })
+
+  test('renderiza el Triangle con los hexData', () => {
+    vi.spyOn(reactRouter, 'useLocation').mockReturnValue({ state: baseState } as any)
+    render(<reactRouter.MemoryRouter><GameOver /></reactRouter.MemoryRouter>)
+    expect(screen.getByTestId('triangle')).toBeInTheDocument()
+  })
+
+  test('click en triangle no hace nada (onHexClick vacío)', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(reactRouter, 'useLocation').mockReturnValue({ state: baseState } as any)
+    render(<reactRouter.MemoryRouter><GameOver /></reactRouter.MemoryRouter>)
+    await user.click(screen.getByTestId('triangle')) // no debe lanzar error
+  })
 })

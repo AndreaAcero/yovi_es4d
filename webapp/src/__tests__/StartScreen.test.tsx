@@ -10,7 +10,7 @@ import { AuthContext } from '../context/AuthContext.tsx'
 // mock Sidebar
 vi.mock('../components/Sidebar', () => ({
   default: () => <div>Sidebar</div>,
-}))
+}))  
 
 // mock Typing
 vi.mock('../components/Typing', () => ({
@@ -38,25 +38,25 @@ describe('StartScreen with AuthContext', () => {
     vi.clearAllMocks()
   })
 
-  test('navigates to /game if user has id', async () => {
+  test('navigates to /select if user has id', async () => {
     renderStartScreen({ id: '123' })
     const user = userEvent.setup()
     await user.click(screen.getByRole('button', { name: resources.es.startScreen.play }))
-    expect(mockNavigate).toHaveBeenCalledWith('/game')
+    expect(mockNavigate).toHaveBeenCalledWith('/select')
   })
 
-  test('navigates to /game if user has userId', async () => {
+  test('navigates to /select if user has userId', async () => {
     renderStartScreen({ userId: '456' })
     const user = userEvent.setup()
     await user.click(screen.getByRole('button', { name: resources.es.startScreen.play }))
-    expect(mockNavigate).toHaveBeenCalledWith('/game')
+    expect(mockNavigate).toHaveBeenCalledWith('/select')
   })
 
-  test('navigates to /game if user has _id', async () => {
+  test('navigates to /select if user has _id', async () => {
     renderStartScreen({ _id: '789' })
     const user = userEvent.setup()
     await user.click(screen.getByRole('button', { name: resources.es.startScreen.play }))
-    expect(mockNavigate).toHaveBeenCalledWith('/game')
+    expect(mockNavigate).toHaveBeenCalledWith('/select')
   })
 
   test('navigates to /login if user exists but has no id, userId or _id', async () => {
