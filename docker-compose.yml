@@ -14,7 +14,7 @@ services:
 
   authservice:
     container_name: authservice_es4d
-    build: ./authservice
+    build: ./users/authservice
     profiles: ["dev", "prod"]
     env_file:
       - .env
@@ -30,7 +30,7 @@ services:
 
   userservice:
     container_name: userservice_es4d
-    build: ./userservice
+    build: ./users/userservice
     profiles: ["dev", "prod"]
     depends_on:
       - mongodb
@@ -62,6 +62,7 @@ services:
       - es4d-net
     environment:
       PORT: 8003
+      MONGODB_URI: mongodb://mongodb:27017/gamedb
       GAMEY_BOT_URL: http://gamey:4000
       USERS_URL: http://userservice:3000
     depends_on:
@@ -93,7 +94,7 @@ services:
     depends_on:
       - gateway
     ports:
-      - "5173:5173"
+      - "5173:80"
     networks:
       - es4d-net
     environment:

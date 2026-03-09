@@ -7,8 +7,10 @@ const port = process.env.PORT || 8003;
 
 const mongoose = require('mongoose');
 
+const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/gameDB';
+
 // Conexión a MongoDB
-mongoose.connect('mongodb://localhost:27017/gameDB')
+mongoose.connect(mongoUri)
   .then(() => console.log('✅ Conectado a MongoDB'))
   .catch(err => console.error('❌ Error conectando a MongoDB:', err));
 
