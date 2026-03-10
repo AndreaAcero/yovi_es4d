@@ -12,116 +12,45 @@ env:
   IMAGE_TAG: ${{ github.event.release.tag_name }}
 
 jobs:
-  # Push user service Docker image
-  docker-push-userservice:
-    name: Push User Service
+
+  build-and-push:
+    name: Build & Push Docker Images
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+
+    strategy:
+      matrix:
+        service:
+          - name: userservice
+            path: users/userservice
+          - name: authservice
+            path: users/authservice
+          - name: webapp
+            path: webapp
+          - name: gamey
+            path: gamey
+          - name: game
+            path: game
+          - name: gateway
+            path: gateway
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Publish User Service
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Publish Docker Image
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
-          name: arquisoft/yovi_es4d-userservice:${{ env.IMAGE_TAG }}
+          name: ${{ github.repository_owner }}/yovi_es4d/${{ matrix.service.name }}:${{ env.IMAGE_TAG }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: ghcr.io
-          workdir: users/userservice
+          workdir: ${{ matrix.service.path }}
 
-  # Push auth service Docker image
-  docker-push-authservice:
-    name: Push Auth Service
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Publish Auth Service
-        uses: elgohr/Publish-Docker-Github-Action@v5
-        with:
-          name: arquisoft/yovi_es4d-authservice:${{ env.IMAGE_TAG }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: ghcr.io
-          workdir: users/authservice
-
-  # Push webapp Docker image
-  docker-push-webapp:
-    name: Push Webapp
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Publish Webapp
-        uses: elgohr/Publish-Docker-Github-Action@v5
-        with:
-          name: ${{ github.repository_owner }}/yovi_es4d-webapp:${{ env.IMAGE_TAG }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: ghcr.io
-          workdir: webapp
-
-  # Push gamey Docker image
-  docker-push-gamey:
-    name: Push Gamey
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Publish Gamey
-        uses: elgohr/Publish-Docker-Github-Action@v5
-        with:
-          name: ${{ github.repository_owner }}/yovi_es4d-gamey:${{ env.IMAGE_TAG }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: ghcr.io
-          workdir: gamey
-
-  # Push game Docker image
-  docker-push-game:
-    name: Push Game
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Publish Game
-        uses: elgohr/Publish-Docker-Github-Action@v5
-        with:
-          name: ${{ github.repository_owner }}/yovi_es4d-game:${{ env.IMAGE_TAG }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: ghcr.io
-          workdir: game
-
-  # Push gateway Docker image
-  docker-push-gateway:
-    name: Push Gateway
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Publish Gateway
-        uses: elgohr/Publish-Docker-Github-Action@v5
-        with:
-          name: ${{ github.repository_owner }}/yovi_es4d-gateway:${{ env.IMAGE_TAG }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: ghcr.io
-          workdir: gateway
-
-  # Deploy over SSH
   deploy:
     name: Deploy on Server
     runs-on: ubuntu-latest
-    needs: [
-      docker-push-userservice,
-      docker-push-authservice,
-      docker-push-webapp,
-      docker-push-gamey,
-      docker-push-game,
-      docker-push-gateway
-    ]
+    needs: build-and-push
+
     steps:
       - name: Deploy over SSH
         uses: fifsky/ssh-action@master
@@ -130,7 +59,17 @@ jobs:
           user: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
           command: |
+
             export IMAGE_TAG=${{ env.IMAGE_TAG }}
-            wget https://raw.githubusercontent.com/${{ github.repository_owner }}/yovi_es4d/${{ env.IMAGE_TAG }}/docker-compose.yml -O docker-compose.yml
+
+            echo "Logging into GHCR..."
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            echo "Downloading docker-compose.yml for release $IMAGE_TAG"
+            wget https://raw.githubusercontent.com/${{ github.repository_owner }}/yovi_es4d/$IMAGE_TAG/docker-compose.yml -O docker-compose.yml
+
+            echo "Stopping previous containers"
             docker compose down
+
+            echo "Starting new containers"
             docker compose --profile dev up -d --pull always
