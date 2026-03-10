@@ -33,7 +33,9 @@ jobs:
         run : npm --prefix game ci
       
       - name: Install dependencias (gamey)
-        run: cargo build --release
+        run: |
+          cd gamey
+          cargo build --release
       
       - name: Install dependencias (gateway)
         run: npm --prefix gateway ci
