@@ -24,7 +24,7 @@ jobs:
       - name: Publish User Service
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
-          name: arquisoft/yovi_es4d/userservice:${{ env.IMAGE_TAG }}
+          name: arquisoft/yovi_es4d-userservice:${{ env.IMAGE_TAG }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: ghcr.io
@@ -44,7 +44,7 @@ jobs:
       - name: Publish Auth Service
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
-          name: arquisoft/yovi_es4d/authservice:${{ env.IMAGE_TAG }}
+          name: arquisoft/yovi_es4d-authservice:${{ env.IMAGE_TAG }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: ghcr.io
@@ -131,6 +131,6 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           command: |
             export IMAGE_TAG=${{ env.IMAGE_TAG }}
-            wget https://raw.githubusercontent.com/${{ github.repository_owner }}/yovi_es4d/${{ env.IMAGE_TAG }}/docker-compose.yml -O docker-compose.yml
+            wget https://raw.githubusercontent.com/${{ github.repository_owner }}/yovi_es4d-${{ env.IMAGE_TAG }}/docker-compose.yml -O docker-compose.yml
             docker compose down
             docker compose --profile dev up -d --pull always
