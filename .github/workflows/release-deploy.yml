@@ -125,4 +125,4 @@ jobs:
           command: |
             wget https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.event.release.tag_name }}/docker-compose.yml -O docker-compose.yml
             docker compose down
-            docker compose up -d --pull always
+            docker compose --profile dev up --build  
