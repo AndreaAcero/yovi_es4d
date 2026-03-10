@@ -29,13 +29,12 @@ jobs:
       - name: Install dependencies (webapp)
         run: npm --prefix webapp ci
 
-      - name: Install dependencias (game)
-        run : npm --prefix game ci
+      -  name: Install dependencias (game)
+         run: npm --prefix game ci
       
       - name: Install dependencias (gamey)
-        run: |
-          cd gamey
-          cargo build --release
+        working-directory: gamey
+        run: cargo build --release
       
       - name: Instalar dependencias (gateway)
         run: npm --prefix gateway ci
