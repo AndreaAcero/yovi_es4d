@@ -1,4 +1,3 @@
-version: "3.9"
 
 services:
   mongodb:
@@ -16,8 +15,6 @@ services:
     container_name: authservice_es4d
     build: ./users/authservice
     profiles: ["dev", "prod"]
-    env_file:
-      - .env
     depends_on:
       - mongodb
     ports:
