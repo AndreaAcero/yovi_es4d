@@ -9,9 +9,7 @@ COPY package*.json ./
 RUN npm install --production
 
 # Copiar código
-COPY .dockerignore ./
-COPY gameModel.js ./
-COPY game-service.js ./
+COPY . .
 
 # Exponer puerto
 EXPOSE 8003
