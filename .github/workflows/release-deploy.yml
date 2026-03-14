@@ -73,22 +73,18 @@ jobs:
       contents: read
       packages: write
     steps:
-    - uses: actions/checkout@v4
-    - name: Update OpenAPI configuration
-      run: |
-        DEPLOY_HOST=${{ secrets.DEPLOY_HOST }}
-        sed -i "s/SOMEIP/${DEPLOY_HOST}/g" gatewayservice/openapi.yaml
-    - name: Publish to Registry
-      uses: elgohr/Publish-Docker-Github-Action@v5
-      env:
-        API_ORIGIN_URI: http://${{ secrets.DEPLOY_HOST }}:3000
-      with:
-        name: AndreaAcero/yovi_es4d/gatewayservice
-        username: ${{ github.actor }}
-        password: ${{ secrets.ASW }}
-        registry: ghcr.io
-        workdir: gatewayservice
-        buildargs: API_ORIGIN_URI
+      - uses: actions/checkout@v4
+      - name: Publish to Registry
+        uses: elgohr/Publish-Docker-Github-Action@v5
+        env:
+          API_ORIGIN_URI: http://${{ secrets.DEPLOY_HOST }}:3000
+        with:
+          name: AndreaAcero/yovi_es4d/gatewayservice
+          username: ${{ github.actor }}
+          password: ${{ secrets.ASW }}
+          registry: ghcr.io
+          workdir: gatewayservice
+          buildargs: API_ORIGIN_URI
   docker-push-game:
       name: Push game service Docker Image to GitHub Packages
       runs-on: ubuntu-latest
@@ -104,7 +100,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.ASW }}
           registry: ghcr.io
-          workdir: users/game
+          workdir: game
   docker-push-gamey:
       name: Push gamey service Docker Image to GitHub Packages
       runs-on: ubuntu-latest
@@ -120,7 +116,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.ASW }}
           registry: ghcr.io
-          workdir: users/gamey
+          workdir: gamey
   deploy:
     name: Deploy over SSH
     runs-on: ubuntu-latest
