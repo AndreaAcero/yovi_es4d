@@ -50,7 +50,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: ghcr.io
           workdir: users/authservice
-    docker-push-userservice:
+  docker-push-userservice:
       name: Push user service Docker Image to GitHub Packages
       runs-on: ubuntu-latest
       permissions:
