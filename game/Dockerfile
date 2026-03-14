@@ -12,7 +12,6 @@ RUN npm install --production
 COPY .dockerignore ./
 COPY gameModel.js ./
 COPY game-service.js ./
-COPY gameService.test.js ./
 
 # Exponer puerto
 EXPOSE 8003

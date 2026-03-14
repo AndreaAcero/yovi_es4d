@@ -66,7 +66,7 @@ jobs:
           password: ${{ secrets.ASW }}
           registry: ghcr.io
           workdir: users/userservice
-  docker-push-gatewayservice:
+  docker-push-gateway:
     name: Push gateway service Docker Image to GitHub Packages
     runs-on: ubuntu-latest
     permissions:
@@ -79,11 +79,11 @@ jobs:
         env:
           API_ORIGIN_URI: http://${{ secrets.DEPLOY_HOST }}:3000
         with:
-          name: AndreaAcero/yovi_es4d/gatewayservice
+          name: AndreaAcero/yovi_es4d/gateway
           username: ${{ github.actor }}
           password: ${{ secrets.ASW }}
           registry: ghcr.io
-          workdir: gatewayservice
+          workdir: gateway
           buildargs: API_ORIGIN_URI
   docker-push-game:
       name: Push game service Docker Image to GitHub Packages
@@ -120,7 +120,7 @@ jobs:
   deploy:
     name: Deploy over SSH
     runs-on: ubuntu-latest
-    needs: [docker-push-userservice,docker-push-authservice,docker-push-gatewayservice,docker-push-webapp,
+    needs: [docker-push-userservice,docker-push-authservice,docker-push-gateway,docker-push-webapp,
           docker-push-gamey,docker-push-game]
     steps:
     - name: Deploy over SSH
@@ -130,7 +130,7 @@ jobs:
         user: ${{ secrets.DEPLOY_USER }}
         key: ${{ secrets.DEPLOY_KEY }}
         command: |
-          cp -r ./gatewayservice/monitoring /home/azureuser/gatewayservice/monitoring
+          cp -r ./gateway/monitoring /home/azureuser/gateway/monitoring
           wget https://raw.githubusercontent.com/AndreaAcero/yovi_es4d/master/docker-compose.yml -O docker-compose.yml
           wget https://raw.githubusercontent.com/AndreaAcero/yovi_es4d/master/.env -O .env
           docker compose --profile prod down
