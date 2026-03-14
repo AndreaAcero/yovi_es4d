@@ -14,7 +14,7 @@ services:
 
   authservice:
     container_name: authservice-yovi_es4d
-    image: ghcr.io/arquisoft/yovi_es4d/authservice:latest
+    image: ghcr.io/AndreaAcero/yovi_es4d/authservice:latest
     volumes:
       - mongodb_data:/data/db
     depends_on:
@@ -29,7 +29,7 @@ services:
 
   userservice:
     container_name: userservice-yovi_es4d
-    image: ghcr.io/arquisoft/yovi_es4d/userservice:latest
+    image: ghcr.io/AndreaAcero/yovi_es4d/userservice:latest
     volumes:
       - mongodb_data:/data/db
     depends_on:
@@ -43,7 +43,7 @@ services:
 
   gamey:
     container_name: gamey-yovi_es4d
-    image: ghcr.io/arquisoft/yovi_es4d/gamey:latest
+    image: ghcr.io/AndreaAcero/yovi_es4d/gamey:latest
     volumes:
       - mongodb_data:/data/db
     ports:
@@ -55,7 +55,7 @@ services:
 
   game:
     container_name: game-yovi_es4d
-    image: ghcr.io/arquisoft/yovi_es4d/game:latest
+    image: ghcr.io/AndreaAcero/yovi_es4d/game:latest
     volumes:
       - mongodb_data:/data/db
     ports:
@@ -73,7 +73,7 @@ services:
 
   gateway:
     container_name: gateway-yovi_es4d
-    image: ghcr.io/arquisoft/yovi_es4d/gateway:latest
+    image: ghcr.io/AndreaAcero/yovi_es4d/gateway:latest
     depends_on:
       - authservice
       - userservice
@@ -90,7 +90,7 @@ services:
 
   webapp:
     container_name: webapp_es4d
-    image: ghcr.io/arquisoft/yovi_es4d/webapp:latest
+    image: ghcr.io/AndreaAcero/yovi_es4d/webapp:latest
     depends_on:
       - gateway
     ports:
