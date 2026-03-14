@@ -130,7 +130,6 @@ jobs:
         user: ${{ secrets.DEPLOY_USER }}
         key: ${{ secrets.DEPLOY_KEY }}
         command: |
-          cp -r ./gateway/monitoring /home/azureuser/gateway/monitoring
           wget https://raw.githubusercontent.com/AndreaAcero/yovi_es4d/master/docker-compose.yml -O docker-compose.yml
           wget https://raw.githubusercontent.com/AndreaAcero/yovi_es4d/master/.env -O .env
           docker compose --profile prod down
