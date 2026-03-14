@@ -123,14 +123,14 @@ jobs:
     needs: [docker-push-userservice,docker-push-authservice,docker-push-gateway,docker-push-webapp,
           docker-push-gamey,docker-push-game]
     steps:
-    - name: Deploy over SSH
-      uses: fifsky/ssh-action@master
-      with:
-        host: ${{ secrets.DEPLOY_HOST }}
-        user: ${{ secrets.DEPLOY_USER }}
-        key: ${{ secrets.DEPLOY_KEY }}
-        command: |
-          wget https://raw.githubusercontent.com/AndreaAcero/yovi_es4d/master/docker-compose.yml -O docker-compose.yml
-          wget https://raw.githubusercontent.com/AndreaAcero/yovi_es4d/master/.env -O .env
-          docker compose --profile prod down
-          docker compose --profile prod up -d --pull always
+      - name: Deploy over SSH
+        uses: fifsky/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          user: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          command: |
+            wget https://raw.githubusercontent.com/AndreaAcero/yovi_es4d/master/docker-compose.yml -O docker-compose.yml
+            wget https://raw.githubusercontent.com/AndreaAcero/yovi_es4d/master/.env -O .env
+            docker compose --profile prod down
+            docker compose --profile prod up -d --pull always
