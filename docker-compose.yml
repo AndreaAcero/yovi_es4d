@@ -50,11 +50,8 @@ services:
       - "4000:4000"
     networks:
       - mynetwork
-    depends_on:
-      - game
     environment:
       MONGODB_URI: mongodb://mongodb:27017/usersdb
-      GAME_URI: http://game:8003
 
   game:
     container_name: game-yovi_es4d
