@@ -12,64 +12,144 @@ env:
   IMAGE_TAG: ${{ github.event.release.tag_name }}
 
 jobs:
-
-  build-and-push:
-    name: Build & Push Docker Images
+  docker-push-webapp:
+    name: Push webapp Docker Image to GitHub Packages
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        service:
-          - name: userservice
-            path: users/userservice
-          - name: authservice
-            path: users/authservice
-          - name: webapp
-            path: webapp
-          - name: gamey
-            path: gamey
-          - name: game
-            path: game
-          - name: gateway
-            path: gateway
-
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Publish Docker Image
-        uses: elgohr/Publish-Docker-Github-Action@v5
-        with:
-          name: ${{ github.repository_owner }}/yovi_es4d/${{ matrix.service.name }}:${{ env.IMAGE_TAG }}
+    - uses: actions/checkout@v4
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@v5
+      env:
+        API_URI: http://${{ secrets.DEPLOY_HOST }}:8000
+        API_ORIGIN_URI: http://${{ secrets.DEPLOY_HOST }}:3000
+      with:
+          name: arquisoft/yovi_es4d/webapp
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: ghcr.io
-          workdir: ${{ matrix.service.path }}
-
-  deploy:
-    name: Deploy on Server
+          workdir: webapp
+          buildargs: |
+            API_URI
+            API_ORIGIN_URI
+  docker-push-authservice:
+    name: Push auth service Docker Image to GitHub Packages
     runs-on: ubuntu-latest
-    needs: build-and-push
-
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - name: Deploy over SSH
-        uses: fifsky/ssh-action@master
+    - uses: actions/checkout@v4
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@v5
+      with:
+          name: arquisoft/yovi_es4d/authservice
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ghcr.io
+          workdir: users/authservice
+    docker-push-userservice:
+      name: Push user service Docker Image to GitHub Packages
+      runs-on: ubuntu-latest
+      permissions:
+        contents: read
+        packages: write
+      steps:
+      - uses: actions/checkout@v4
+      - name: Publish to Registry
+        uses: elgohr/Publish-Docker-Github-Action@v5
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          user: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_KEY }}
-          command: |
-
-            export IMAGE_TAG=${{ env.IMAGE_TAG }}
-
-            echo "Logging into GHCR..."
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            echo "Downloading docker-compose.yml for release $IMAGE_TAG"
-            wget https://raw.githubusercontent.com/${{ github.repository_owner }}/yovi_es4d/$IMAGE_TAG/docker-compose.yml -O docker-compose.yml
-
-            echo "Stopping previous containers"
-            docker compose down
-
-            echo "Starting new containers"
-            docker compose --profile dev up -d --pull always
+          name: arquisoft/yovi_es4d/userservice
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ghcr.io
+          workdir: users/userservice
+  docker-push-gatewayservice:
+    name: Push gateway service Docker Image to GitHub Packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Update OpenAPI configuration
+      run: |
+        DEPLOY_HOST=${{ secrets.DEPLOY_HOST }}
+        sed -i "s/SOMEIP/${DEPLOY_HOST}/g" gatewayservice/openapi.yaml
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@v5
+      env:
+        API_ORIGIN_URI: http://${{ secrets.DEPLOY_HOST }}:3000
+      with:
+        name: arquisoft/yovi_es4d/gatewayservice
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: ghcr.io
+        workdir: gatewayservice
+        buildargs: API_ORIGIN_URI
+  docker-push-game:
+    name: Push game service Docker Image to GitHub Packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Update OpenAPI configuration
+      run: |
+        DEPLOY_HOST=${{ secrets.DEPLOY_HOST }}
+        sed -i "s/SOMEIP/${DEPLOY_HOST}/g" game/openapi.yaml
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@v5
+      env:
+        API_ORIGIN_URI: http://${{ secrets.DEPLOY_HOST }}:3000
+      with:
+        name: arquisoft/yovi_es4d/game
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: ghcr.io
+        workdir: game
+        buildargs: API_ORIGIN_URI
+  docker-push-gamey:
+    name: Push gamey service Docker Image to GitHub Packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Update OpenAPI configuration
+      run: |
+        DEPLOY_HOST=${{ secrets.DEPLOY_HOST }}
+        sed -i "s/SOMEIP/${DEPLOY_HOST}/g" gamey/openapi.yaml
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@v5
+      env:
+        API_ORIGIN_URI: http://${{ secrets.DEPLOY_HOST }}:3000
+      with:
+        name: arquisoft/yovi_es4d/gamey
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: ghcr.io
+        workdir: gamey
+        buildargs: API_ORIGIN_URI
+  deploy:
+    name: Deploy over SSH
+    runs-on: ubuntu-latest
+    needs: [docker-push-userservice,docker-push-authservice,docker-push-gatewayservice,docker-push-webapp,
+          docker-push-gamey,docker-push-game, docker-push-prometheus, docker-push-grafana]
+    steps:
+    - name: Deploy over SSH
+      uses: fifsky/ssh-action@master
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        user: ${{ secrets.DEPLOY_USER }}
+        key: ${{ secrets.DEPLOY_KEY }}
+        command: |
+          cp -r ./gatewayservice/monitoring /home/azureuser/gatewayservice/monitoring
+          wget https://raw.githubusercontent.com/arquisoft/yovi_es4d/master/docker-compose.yml -O docker-compose.yml
+          wget https://raw.githubusercontent.com/arquisoft/yovi_es4d/master/.env -O .env
+          docker compose --profile prod down
+          docker compose --profile prod up -d --pull always

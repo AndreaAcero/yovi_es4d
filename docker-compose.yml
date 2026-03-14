@@ -10,50 +10,61 @@ services:
     ports:
       - "27017:27017"
     networks:
-      - es4d-net
+      - mynetwork
 
   authservice:
-    container_name: authservice_es4d
-    image: ghcr.io/arquisoft/yovi_es4d/authservice:${IMAGE_TAG}
+    container_name: authservice-yovi_es4d
+    image: ghcr.io/arquisoft/yovi_es4d/authservice:latest
+    volumes:
+      - mongodb_data:/data/db
     depends_on:
       - mongodb
     ports:
       - "8002:8002"
     networks:
-      - es4d-net
+      - mynetwork
     environment:
       MONGODB_URI: mongodb://mongodb:27017/usersdb
       JWT_SECRET: your-secret-key
 
   userservice:
-    container_name: userservice_es4d
-    image: ghcr.io/arquisoft/yovi_es4d/userservice:${IMAGE_TAG}
+    container_name: userservice-yovi_es4d
+    image: ghcr.io/arquisoft/yovi_es4d/userservice:latest
+    volumes:
+      - mongodb_data:/data/db
     depends_on:
       - mongodb
     ports:
       - "8001:8001"
     networks:
-      - es4d-net
+      - mynetwork
     environment:
       MONGODB_URI: mongodb://mongodb:27017/usersdb
 
   gamey:
-    container_name: gamey_es4d
-    image: ghcr.io/arquisoft/yovi_es4d/gamey:${IMAGE_TAG}
+    container_name: gamey-yovi_es4d
+    image: ghcr.io/arquisoft/yovi_es4d/gamey:latest
+    volumes:
+      - mongodb_data:/data/db
     ports:
       - "4000:4000"
     networks:
-      - es4d-net
+      - mynetwork
+    depends_on:
+      - game
     environment:
-      PORT: 4000
+      MONGODB_URI: mongodb://mongodb:27017/usersdb
+      GAME_URI: http://game:8003
 
   game:
-    container_name: game_es4d
-    image: ghcr.io/arquisoft/yovi_es4d/game:${IMAGE_TAG}
+    container_name: game-yovi_es4d
+    image: ghcr.io/arquisoft/yovi_es4d/game:latest
+    volumes:
+      - mongodb_data:/data/db
     ports:
       - "8003:8003"
     networks:
-      - es4d-net
+      - mynetwork
     depends_on:
       - userservice
       - gamey
@@ -64,8 +75,8 @@ services:
       USERS_URL: http://userservice:8001
 
   gateway:
-    container_name: gateway_es4d
-    image: ghcr.io/arquisoft/yovi_es4d/gateway:${IMAGE_TAG}
+    container_name: gateway-yovi_es4d
+    image: ghcr.io/arquisoft/yovi_es4d/gateway:latest
     depends_on:
       - authservice
       - userservice
@@ -73,7 +84,7 @@ services:
     ports:
       - "8000:8000"
     networks:
-      - es4d-net
+      - mynetwork
     environment:
       AUTH_SERVICE_URL: http://authservice:8002
       USER_SERVICE_URL: http://userservice:8001
@@ -82,21 +93,22 @@ services:
 
   webapp:
     container_name: webapp_es4d
-    image: ghcr.io/arquisoft/yovi_es4d/webapp:${IMAGE_TAG}
+    image: ghcr.io/arquisoft/yovi_es4d/webapp:latest
     depends_on:
       - gateway
     ports:
-      - "5173:80"
+      - "5173:5173"
     networks:
-      - es4d-net
+      - mynetwork
     environment:
       VITE_API_URL: http://gateway:8000
 
   prometheus:
     image: prom/prometheus
-    container_name: prometheus_es4d
+    container_name: prometheus-yovi_es4d
+    profiles: ["dev", "prod"]
     networks:
-      - es4d-net
+      - mynetwork
     volumes:
       - ./gateway/monitoring/prometheus:/etc/prometheus
       - prometheus_data:/prometheus
@@ -107,9 +119,10 @@ services:
 
   grafana:
     image: grafana/grafana
-    container_name: grafana_es4d
+    container_name: grafana-yovi_es4d
+    profiles: ["dev", "prod"]
     networks:
-      - es4d-net
+      - mynetwork
     volumes:
       - grafana_data:/var/lib/grafana
       - ./gateway/monitoring/grafana/provisioning:/etc/grafana/provisioning
@@ -129,5 +142,5 @@ volumes:
   grafana_data:
 
 networks:
-  es4d-net:
+  mynetwork:
     driver: bridge

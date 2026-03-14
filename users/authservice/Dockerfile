@@ -11,10 +11,16 @@ COPY package*.json ./
 RUN npm install
 
 # Copy the app source code to the working directory
-COPY . .
+COPY .dockerignore ./
+COPY auth-model.js ./
+COPY auth-service.js ./
+COPY auth-service.test.js ./
 
 # Expose the port the app runs on
 EXPOSE 8002
+
+USER nonroot
+
 
 # Define the command to run your app
 CMD ["node", "auth-service.js"]

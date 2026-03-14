@@ -1,6 +1,6 @@
 FROM node:18-alpine
 
-WORKDIR /app
+WORKDIR /app/game
 
 # Copiar package files
 COPY package*.json ./
@@ -9,10 +9,18 @@ COPY package*.json ./
 RUN npm install --production
 
 # Copiar código
-COPY . .
+COPY .dockerignore ./
+COPY gameModel.js ./
+COPY game-service.js ./
+COPY gameService.test.js ./
 
 # Exponer puerto
 EXPOSE 8003
+
+USER nonroot
+
+ARG API_ORIN_URI:="http://localhost:5173"
+ENV REACT_APP_API_ORIGIN_ENDPOINT=$API_ORIGIN_URI
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \

@@ -10,8 +10,14 @@ COPY package*.json ./
 # Install app dependencies
 RUN npm install
 
-# Copy the app source code to the working directory
-COPY . .
+COPY .dockerignore ./
+COPY user-model.js ./
+COPY user-service.js ./
+COPY user-service.test.js ./
+
+
+
+USER nonroot
 
 # Expose the port the app runs on
 EXPOSE 8001

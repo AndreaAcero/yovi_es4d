@@ -22,5 +22,9 @@ COPY --from=builder /app/gamey/target/release/gamey .
 # Expose the port gamey will listen on
 EXPOSE 4000
 
+
+ARG API_ORIN_URI:="http://localhost:5173"
+ENV REACT_APP_API_ORIGIN_ENDPOINT=$API_ORIGIN_URI
+
 # Run the gamey server on port 4000
 CMD ["./gamey", "--mode", "server", "--port", "4000"]
